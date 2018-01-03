@@ -3,31 +3,34 @@ var fs = require('fs')
 var url = require('url')
 var path = require('path')
 
-http.createServer(function(request,response){
-	var pathObj = url.parse(request.url,true)
-	console.log(pathObj)
+http.createServer(function(req, res){
 
-	switch(pathObj.pathname){
-		case '/laodMore':
+  var pathObj = url.parse(req.url, true)
+  console.log(pathObj)
 
-			var index = pathObj.query.index
-			var length = pathObj.query.length
-			var data = []
+  switch (pathObj.pathname) {
+    case '/loadMore':
 
-			for(var i=0;i<data.length;i++){
-				data.push('内容' + (parseInt(index) + i))
-			}
-			response.end(JSON.stringify(data))
+      var curIdx = pathObj.query.idx
+      var len = pathObj.query.len
+      var data = []
 
-			break;
-		default:
-		fs.readFile(path.join(__dirname,pathObj.pathname),funtion(err,data){
-			if(err){
-				response.statusCode = 404
-				response.end('Not found')
-			}else{
-				response.end(data)
-			}
-		})
-	}
+      for(var i = 0; i < len; i++) {
+        data.push('内容' + (parseInt(curIdx) + i))
+      }
+      res.end(JSON.stringify(data))
+          
+      break;
+
+    default:
+     fs.readFile(path.join(__dirname,pathObj.pathname), function(err, data){
+      if(err){
+        res.statusCode = 404
+        res.end('Not found')
+      }else{
+        res.end(data)
+      }
+     })
+      
+  }
 }).listen(8080)
