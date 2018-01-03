@@ -1,54 +1,128 @@
 <!DOCTYPE html>
 <html>
-<head>
-	<meta charset="utf-8">
-	<title>AJAX 加载更多</title>
-	<link rel="stylesheet" type="text/css" href="./ajax-4.css">
-</head>
-<body>
-	<ul id="ct">
-		<li>内容1</li>
-		<li>内容2</li>
-	</ul>
-	<div id="load-more">
-		<a class="btn" href="#">加载更多</a>		
-	</div>
+  <head>
+    <meta charset="utf-8"/>
+    <title>
+      加载更多
+    </title>
+    <style>
+      ul,li{
+      margin: 0;
+      padding: 0
+    }
+    #ct li{
+      list-style:none;
+      border: 1px solid #ccc;
+      padding: 10px;
+      margin-top: 10px;
+      cursor:pointer;
+    }
+    #load-more{
+      display: block;
+      margin: 10px auto;
+      text-align: center;
+      cursor: pointer;
+    }
+    #load-more img{
+      width: 40px;
+      height: 40px;
+    }
+    .btn{
+      display: inline-block;
+      height: 40px;
+      line-height: 40px;
+      width: 80px;
+      border: 1px solid #E27272;
+      border-radius: 3px;
+      text-align: center;
+      text-decoration: none;
+      color: #E27272;
+    }
+    #ct li:hover{
+      background: green;
+      color: #fff;
+    }
+      </style>
+  </head>
+  <body>
+    <ul id="ct">
+    </ul>
+    <a id="load-more" class="btn" href="#">
+      加载更多
+    </a>
+  </body>
 
-	<script type="text/javascript">
-		var ct = docunment.querySelector('#ct')
-		var btn = docunment.querySelector('.btn')
-		var pageIndex = 0
+  <script>
+      
+  /*定义接口
+  
+  1) url:
+  2) 入参: { start: 2, len: 6 }
+  3) 回参: 
+  {
+    status: 1, //1代表正常，0代表出错
+    data: [2,3,4,5,6,7]
+  }
+  */
+  
+  var ct = document.querySelector('#ct')
+  var btn = document.querySelector('#load-more')
 
-		var isLoading = true
+  var curIndex = 0  //当前要加载的数据的序号
+  var len = 5   // 每次加载多少个数据
+  var isLoading = false  //状态锁，用于判断是否在加载数据
 
-		btn.addEventListener('click',function(e){
-			e.preventDefalut()
-			if(!isLoading){return}
-			isLoading = true
+  btn.addEventListener('click', function(e){
+    e.preventDefault();  //防止点击 a 链接页面跳到顶部
 
-			var xhr = new XMLHttpRequest()
-			var fragment = docunment.creatDocumentFragment()
+    if(isLoading) {
+      return   //如果正在请求数据，那这次点击什么都不做
+    }
 
-			xhr.onreadystatechange = function(){
-				if(xhr.readyState === 4 && xhr.status  >=200&& xhr.status <=300 ||xhr.status === 304){
-					isLoading = false
-					var data = JSON.parse(xhr.responseText)
-					console.log(data)
-					for(var i =0 ;i<data.length; i++){
-						var newLi = document.createElement('li')
-						var newContent = document.createTextNode(data[i])
-						newLi.appendChild(newContent)
-						fragment.appendChild(newLi)
-					}
-					ct.appendChild(fragment)
-					pageIndex += 5
-					console.log(pageIndex)
-				}
-			}
+    //执行到这里说明 没有正在发出的请求，那后面就可以发请求
+    isLoading = true   //发请求之前做个标记加锁
+    ajax('/loadMore', {
+      idx: curIndex,
+      len: len
+    }, function(data){
+      appendData(data)
+      isLoading = false   //数据到来之后 解
+      curIndex = curIndex + len  //修改序号，下次要数据就从新序号开始要
+      console.log(curIndex)
+    })
+ 
+  }) 
 
-			xhr.open('GET','/laodMore?index=' + index + '&length=5')
-			xhr.send()
-		})
-	</script>
-</body>
+
+  function ajax(url, json, onSuccess, onError) {
+    var xhr = new XMLHttpRequest()
+    var arr = []
+    for (key in json) {
+      arr.push(key + '=' + json[key])
+    }
+    url += '?' + arr.join('&')
+    xhr.open('get', url)
+    xhr.send()
+
+     xhr.onload = function(){
+      if((xhr.status >= 200 && xhr.status < 300) || xhr.status == 304){
+        onSuccess(JSON.parse(this.response))
+      }else{
+        onError && onError()
+      }
+    }
+  }
+
+
+  function appendData(data){
+    for(var i = 0; i<data.length; i++){
+      var child = document.createElement('li')
+      child.innerText = data[i]
+      ct.appendChild(child)
+    }
+  }
+  
+  
+      
+    </script>
 </html>
